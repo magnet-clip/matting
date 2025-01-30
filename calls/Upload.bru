@@ -1,0 +1,16 @@
+meta {
+  name: Upload
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/upload
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  hash: hallo
+  file: @file(/home/rustam/Downloads/living-room-2-hd_2048_1080_25fps_project_2_0_7_rendered.mp4)
+}
