@@ -12,7 +12,7 @@ from zipfile import ZipFile
 TMP_PATH = "/tmp/matting"
 RESOLUTION = (768, 432)
 PORT = 8080
-MODEL_PATH = "../model/model.pt"
+MODEL_PATH = "../../model/model.pt"
 
 device = "cuda"
 

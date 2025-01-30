@@ -18,12 +18,12 @@ import numpy as np
 import sys
 import os
 
-sys.path.insert(0, "../sam2")
+sys.path.insert(0, "../../sam2")
 
 from sam2.build_sam import build_sam2_video_predictor
 
 
-sam2_checkpoint = "../sam2/checkpoints/sam2.1_hiera_large.pt"
+sam2_checkpoint = "../../sam2/checkpoints/sam2.1_hiera_large.pt"
 model_cfg = "configs/sam2.1/sam2.1_hiera_l.yaml"
 
 
