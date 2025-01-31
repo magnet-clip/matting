@@ -23,6 +23,10 @@ class VideoRepo {
     const res = await db.getAll(VIDEO_INFO_TABLE);
     return res;
   }
+
+  public async addVideo(hash: string, content: ArrayBuffer, data) {
+    throw new Error("Method not implemented.");
+  }
 }
 
 export const videoRepo = new VideoRepo();

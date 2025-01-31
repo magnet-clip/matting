@@ -131,7 +131,9 @@ async def upload(request: web.Request):
 
         folder = Path(TMP_PATH) / hash
         if folder.exists():
-            return MattingResponse.success("Already exists")
+            with open(str(folder / "params.json"), "r") as params:
+                info = json.load(params)
+                return MattingResponse.success("Already exists", info)
 
         os.makedirs(str(folder))
 
@@ -153,7 +155,7 @@ async def upload(request: web.Request):
         success, image = vidcap.read()
         count = 0
         while success:
-            resolution = image.shape
+            resolution = image.shape[:2][::-1]
             image = cv2.resize(image, RESOLUTION, interpolation=cv2.INTER_LANCZOS4)
             cv2.imwrite(str(frames_folder / f"{count:05d}.jpg"), image)
             success, image = vidcap.read()
