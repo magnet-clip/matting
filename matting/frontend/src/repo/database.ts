@@ -36,7 +36,7 @@ class ProjectRepo {
     await db.add(PROJECTS_TABLE, data);
   }
 
-  public async updateProject(uuid: string) {
+  public async updateProjectAccess(uuid: string, accessed: number) {
     const t = db.transaction([PROJECTS_TABLE], "readwrite");
     const videoInfo = t.objectStore(PROJECTS_TABLE);
     const record = (await videoInfo.get(uuid)) as ProjectData;
@@ -44,7 +44,21 @@ class ProjectRepo {
       t.abort();
       return;
     } else {
-      record.accessed = Date.now();
+      record.accessed = accessed;
+      await videoInfo.put(record);
+      t.commit();
+    }
+  }
+
+  public async updateProjectName(uuid: string, name: string) {
+    const t = db.transaction([PROJECTS_TABLE], "readwrite");
+    const videoInfo = t.objectStore(PROJECTS_TABLE);
+    const record = (await videoInfo.get(uuid)) as ProjectData;
+    if (!record) {
+      t.abort();
+      return;
+    } else {
+      record.name = name;
       await videoInfo.put(record);
       t.commit();
     }

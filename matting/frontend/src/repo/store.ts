@@ -12,8 +12,17 @@ export const loadProjectList = createEffect(async () => {
 });
 
 export const updateProjectAccess = createEffect(async (uuid: string) => {
-  await projectRepo.updateProject(uuid);
+  const accessed = Date.now();
+  await projectRepo.updateProjectAccess(uuid, accessed);
+  return { uuid, accessed };
 });
+
+export const setProjectName = createEffect(
+  async ({ uuid, name }: { uuid: string; name: string }) => {
+    await projectRepo.updateProjectName(uuid, name);
+    return [uuid, name];
+  }
+);
 
 export const importVideo = createEffect(
   async (file: File): Promise<[VideoData, ProjectData]> => {
@@ -76,4 +85,14 @@ export const store = createStore<MattingState>(initialState)
       };
     }
   })
-  .on(selectProject, (state, project) => ({ ...state, project }));
+  .on(selectProject, (state, project) => ({ ...state, project }))
+  .on(setProjectName, (state, { uuid, name }) => ({
+    ...state,
+    projects: state.projects.map((p) => (p.uuid === uuid ? { ...p, name } : p)),
+  }))
+  .on(updateProjectAccess.doneData, (state, { uuid, accessed }) => ({
+    ...state,
+    projects: state.projects.map((p) =>
+      p.uuid === uuid ? { ...p, accessed } : p
+    ),
+  }));

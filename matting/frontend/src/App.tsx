@@ -1,19 +1,13 @@
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  JSX,
-  type Component,
-} from "solid-js";
+import { createEffect, Index, JSX, Show, type Component } from "solid-js";
 import { useUnit } from "effector-solid";
-import { Divider, Drawer, Button } from "@suid/material";
+import { Divider, Drawer, Button, Input } from "@suid/material";
 import {
   importVideo,
   store,
   loadProjectList,
   selectProject,
   updateProjectAccess,
+  setProjectName,
 } from "./repo/store";
 import { type ProjectData } from "./models/models";
 import AddIcon from "@suid/icons-material/Add";
@@ -46,7 +40,7 @@ export const UploadVideo: Component = () => {
 };
 
 export const ProjectCard: Component<{
-  info: ProjectData;
+  info: () => ProjectData;
 }> = ({ info }) => {
   const state = useUnit(store);
   return (
@@ -56,16 +50,18 @@ export const ProjectCard: Component<{
         "flex-direction": "column",
         "text-decoration": "none",
       }}
-      href={`/${info.uuid}`}
+      href={`/${info().uuid}`}
       activeClass="default"
       inactiveClass="default"
     >
       <Divider style={{ "margin-bottom": "5px" }} />
-      <img src={arrayToUrl(info.frame)} style={{ width: "200px" }} />
+      <img src={arrayToUrl(info().frame)} style={{ width: "200px" }} />
       <span
-        style={{ "font-weight": state().project === info.uuid ? "bold" : null }}
+        style={{
+          "font-weight": state().project === info().uuid ? "bold" : null,
+        }}
       >
-        {info.name}
+        {info().name}
       </span>
     </A>
   );
@@ -74,24 +70,50 @@ export const ProjectCard: Component<{
 export const Projects: Component = () => {
   const state = useUnit(store);
 
-  const projects = createMemo(() =>
-    state().projects.sort((a, b) => b.accessed - a.accessed)
-  );
+  const projects = () =>
+    state().projects.sort((a, b) => b.accessed - a.accessed);
 
   return (
     <div>
       <UploadVideo />
-      <For each={projects()}>{(project) => <ProjectCard info={project} />}</For>
+      <Index each={projects()}>
+        {(project, index) => <ProjectCard info={project} data-index={index} />}
+      </Index>
     </div>
   );
 };
 
 export const Content: Component = () => {
   const state = useUnit(store);
+
+  const name = () => {
+    const id = state().project;
+    const project = state().projects.find((p) => p.uuid === id);
+    if (project) {
+      return project.name;
+    } else {
+      return null;
+    }
+  };
+
   return (
-    <div style={{ margin: "5px" }}>
-      {state().project} - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaa
-    </div>
+    <Show when={name() && state().project}>
+      <div
+        style={{
+          margin: "5px",
+          display: "flex",
+          "flex-direction": "column",
+          width: "100%",
+        }}
+      >
+        <Input
+          value={name()}
+          onChange={(e) =>
+            setProjectName({ uuid: state().project, name: e.target.value })
+          }
+        />
+      </div>
+    </Show>
   );
 };
 
