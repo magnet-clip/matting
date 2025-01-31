@@ -11,6 +11,10 @@ export const loadProjectList = createEffect(async () => {
   return projects;
 });
 
+export const updateProjectAccess = createEffect(async (uuid: string) => {
+  await projectRepo.updateProject(uuid);
+});
+
 export const importVideo = createEffect(
   async (file: File): Promise<[VideoData, ProjectData]> => {
     try {

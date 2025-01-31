@@ -13,8 +13,9 @@ import {
   store,
   loadProjectList,
   selectProject,
+  updateProjectAccess,
 } from "./repo/store";
-import { ProjectData } from "./models/models";
+import { type ProjectData } from "./models/models";
 import AddIcon from "@suid/icons-material/Add";
 import { arrayToUrl } from "./utils/array-to-url";
 import { A, useParams } from "@solidjs/router";
@@ -74,7 +75,7 @@ export const Projects: Component = () => {
   const state = useUnit(store);
 
   const projects = createMemo(() =>
-    state().projects.sort((a, b) => a.accessed - b.accessed)
+    state().projects.sort((a, b) => b.accessed - a.accessed)
   );
 
   return (
@@ -98,7 +99,7 @@ const App: Component = () => {
   const params = useParams();
 
   createEffect(() => {
-    // TODO update project access time
+    updateProjectAccess(params.projectId);
     loadProjectList();
   });
 

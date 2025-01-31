@@ -35,6 +35,20 @@ class ProjectRepo {
   public async addProject(data: ProjectData) {
     await db.add(PROJECTS_TABLE, data);
   }
+
+  public async updateProject(uuid: string) {
+    const t = db.transaction([PROJECTS_TABLE], "readwrite");
+    const videoInfo = t.objectStore(PROJECTS_TABLE);
+    const record = (await videoInfo.get(uuid)) as ProjectData;
+    if (!record) {
+      t.abort();
+      return;
+    } else {
+      record.accessed = Date.now();
+      await videoInfo.put(record);
+      t.commit();
+    }
+  }
 }
 
 class VideoRepo {
