@@ -1,4 +1,9 @@
 export type VideoData = {
+    hash: string;
+    content: ArrayBuffer;
+};
+
+export type VideoInfo = {
     frames: number;
     resolution: [number, number];
     fps: number;

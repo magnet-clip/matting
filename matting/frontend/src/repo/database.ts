@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { VideoData, ProjectData as ProjectData } from "../models/models";
+import { VideoInfo as VideoInfo, ProjectData as ProjectData, VideoData } from "../models/models";
 
 const LAST_DB_VERSION = 2;
 const VIDEO_INFO_TABLE = "video-info"; // hash -> arraybuffer
@@ -70,7 +70,7 @@ class ProjectRepo {
 }
 
 class VideoRepo {
-    public async addVideo(hash: string, content: ArrayBuffer, data: VideoData) {
+    public async addVideo(hash: string, content: ArrayBuffer, data: VideoInfo) {
         const t = db.transaction([VIDEO_INFO_TABLE, VIDEO_DATA_TABLE], "readwrite");
         const videoInfo = t.objectStore(VIDEO_INFO_TABLE);
         const record = await videoInfo.get(hash);
@@ -82,6 +82,10 @@ class VideoRepo {
             await videoData.add({ hash, content });
             t.commit();
         }
+    }
+
+    public async getVideo(hash: string): Promise<[VideoData, VideoInfo]> {
+        return Promise.all([db.get(VIDEO_DATA_TABLE, hash), db.get(VIDEO_INFO_TABLE, hash)]);
     }
 }
 

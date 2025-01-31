@@ -10,11 +10,12 @@ import {
     setProjectName,
     deleteProject,
 } from "./repo/store";
-import { type ProjectData } from "./models/models";
+import { VideoData, VideoInfo, type ProjectData } from "./models/models";
 import AddIcon from "@suid/icons-material/Add";
 import { arrayToUrl } from "./utils/array-to-url";
 import { A, useParams } from "@solidjs/router";
 import DeleteIcon from "@suid/icons-material/Delete";
+import { videoRepo } from "./repo/database";
 
 export const UploadVideo: Component = () => {
     let fileInput!: HTMLInputElement;
@@ -101,32 +102,52 @@ export const Projects: Component = () => {
 
 export const Content: Component = () => {
     const state = useUnit(store);
+    const [videoData, setVideoData] = createSignal<VideoData>();
+    const [videoInfo, setVideoInfo] = createSignal<VideoInfo>();
 
-    const name = () => {
+    const project = () => {
         const id = state().project;
-        const project = state().projects.find((p) => p.uuid === id);
-        if (project) {
-            return project.name;
-        } else {
-            return null;
-        }
+        return state().projects.find((p) => p.uuid === id);
     };
 
+    createEffect(() => {
+        if (!project()) return;
+        videoRepo.getVideo(project().hash).then(([data, info]) => {
+            setVideoData(data);
+            setVideoInfo(info);
+        });
+    });
+
+    createEffect(() => {
+        // TODO
+    });
+
     return (
-        <Show when={name() !== null}>
-            <div
-                style={{
-                    margin: "5px",
-                    display: "flex",
-                    "flex-direction": "column",
-                    width: "100%",
-                }}>
-                <span>
-                    <Input
-                        value={name()}
-                        onChange={(e) => setProjectName({ uuid: state().project, name: e.target.value })}
-                    />
-                </span>
+        <Show when={project()}>
+            <div style={{ display: "flex", "flex-direction": "column", width: "100%" }}>
+                <div
+                    style={{
+                        margin: "5px",
+                        display: "flex",
+                        "flex-direction": "column",
+                        width: "100%",
+                    }}>
+                    <span>
+                        <Input
+                            value={project().name}
+                            onChange={(e) => setProjectName({ uuid: state().project, name: e.target.value })}
+                        />
+                    </span>
+                </div>
+                <Show when={videoInfo()} fallback={<>Loading...</>}>
+                    <div>
+                        <canvas
+                            style={{ width: "calc(100% - 40px)", border: "1px solid gray", margin: "20px" }}
+                            width={videoInfo().resolution[0]}
+                            height={videoInfo().resolution[1]}
+                        />
+                    </div>
+                </Show>
             </div>
         </Show>
     );

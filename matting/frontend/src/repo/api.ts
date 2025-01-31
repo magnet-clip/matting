@@ -1,11 +1,11 @@
-import { VideoData } from "../models/models";
+import { VideoInfo } from "../models/models";
 
 const BASE_URL = "http://localhost:8080";
 
 class VideoApi {
     constructor(private baseUrl: string) {}
 
-    public async upload(hash: string, file: File): Promise<VideoData> {
+    public async upload(hash: string, file: File): Promise<VideoInfo> {
         const fd = new FormData();
         fd.append("hash", hash);
         fd.append("file", file);

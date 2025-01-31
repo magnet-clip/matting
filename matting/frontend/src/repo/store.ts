@@ -1,5 +1,5 @@
 import { createEffect, createEvent, createStore } from "effector";
-import { VideoData, ProjectData } from "../models/models";
+import { VideoInfo, ProjectData } from "../models/models";
 import { hashVideo } from "../utils/hash-video";
 import { readFile } from "../utils/read-file";
 import { videoApi } from "./api";
@@ -27,7 +27,7 @@ export const deleteProject = createEffect(async (uuid: string) => {
     return uuid;
 });
 
-export const importVideo = createEffect(async (file: File): Promise<[VideoData, ProjectData]> => {
+export const importVideo = createEffect(async (file: File): Promise<[VideoInfo, ProjectData]> => {
     try {
         const content = await readFile(file);
         const hash = await hashVideo(content);
@@ -57,7 +57,7 @@ export const importVideo = createEffect(async (file: File): Promise<[VideoData, 
 type MattingState = {
     project: string;
     projects: ProjectData[];
-    videos: VideoData[];
+    videos: VideoInfo[];
 };
 
 const initialState: MattingState = {
