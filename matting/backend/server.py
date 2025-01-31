@@ -8,6 +8,8 @@ import torch
 from uuid import uuid4 as uuid
 import numpy as np
 from zipfile import ZipFile
+import logging
+from logging import Logger
 
 TMP_PATH = "/tmp/matting"
 RESOLUTION = (768, 432)
@@ -17,14 +19,36 @@ MODEL_PATH = "../../model/model.pt"
 device = "cuda"
 
 
-os.makedirs(TMP_PATH, exist_ok=True)
-
-with open(MODEL_PATH, "rb") as fh:
-    model = torch.load(fh, weights_only=False)
-parser = SamVideoParser(device)
-predictor = MattingPredictor(parser, model, device)
-
 routes = web.RouteTableDef()
+
+logger: Logger = None
+parser: SamVideoParser = None
+predictor: MattingPredictor = None
+
+
+def init_logger():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s")
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
+
+
+def init():
+    os.makedirs(TMP_PATH, exist_ok=True)
+
+    logger.info("Loading model...")
+    with open(MODEL_PATH, "rb") as fh:
+        model = torch.load(fh, weights_only=False)
+    logger.info("Loading SAM2...")
+    parser = SamVideoParser(device)
+    logger.info("Creating predictor...")
+    predictor = MattingPredictor(parser, model, device)
+    logger.info("Ready")
+    return parser, predictor
 
 
 class MattingResponse:
@@ -45,6 +69,7 @@ class MattingResponse:
 
 @routes.get("/ready")
 async def hello():
+    logger.info("READY request")
     return web.Response(text="yes")
 
 
@@ -124,6 +149,7 @@ async def upload(request: web.Request):
         os.makedirs(str(frames_folder))
 
         vidcap = cv2.VideoCapture(full_filename)
+        fps = vidcap.get(cv2.CAP_PROP_FPS)
         success, image = vidcap.read()
         count = 0
         while success:
@@ -133,17 +159,25 @@ async def upload(request: web.Request):
             success, image = vidcap.read()
             count += 1
 
-        with open(str(folder / "params.json"), "w") as params:
-            json.dump({"resolution": list(resolution[:2][::-1])}, params)
+        info = {
+            "size": size,
+            "frames": count,
+            "resolution": resolution,
+            "fps": fps,
+        }
 
-        return MattingResponse.success(
-            "Parsed",
-            {"size": size, "name": filename, "frames": count, "resolution": resolution},
-        )
+        with open(str(folder / "params.json"), "w") as params:
+            json.dump(info, params)
+
+        return MattingResponse.success("Parsed", info)
     except Exception:
         return MattingResponse.fail("Unexpected error")
 
 
-app = web.Application()
-app.add_routes(routes)
-web.run_app(app, port=PORT)
+if __name__ == "__main__":
+    logger = init_logger()
+    logger.info("Starting...")
+    parser, predictor = init()
+    app = web.Application()
+    app.add_routes(routes)
+    web.run_app(app, port=PORT)
