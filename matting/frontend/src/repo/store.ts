@@ -1,4 +1,4 @@
-import { createEffect, createStore } from "effector";
+import { createEffect, createEvent, createStore } from "effector";
 import { VideoData, ProjectData } from "../models/models";
 import { hashVideo } from "../utils/hash-video";
 import { readFile } from "../utils/read-file";
@@ -41,14 +41,18 @@ export const importVideo = createEffect(
 );
 
 type MattingState = {
+  project: string;
   projects: ProjectData[];
   videos: VideoData[];
 };
 
 const initialState: MattingState = {
+  project: null,
   projects: [],
   videos: [],
 };
+
+export const selectProject = createEvent<string>();
 
 export const store = createStore<MattingState>(initialState)
   .on(loadProjectList.doneData, (state, projects) => ({ ...state, projects }))
@@ -62,8 +66,10 @@ export const store = createStore<MattingState>(initialState)
       };
     } else {
       return {
+        ...state,
         videos: [...state.videos, video],
         projects: [...state.projects, project],
       };
     }
-  });
+  })
+  .on(selectProject, (state, project) => ({ ...state, project }));
