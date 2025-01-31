@@ -74,7 +74,7 @@ export const ProjectCard: Component<{
                             "font-weight": state().project === info().uuid ? "bold" : null,
                             "min-height": "20px",
                         }}>
-                        {info().name || "<unnamed>"}
+                        {info().name || "<no name>"}
                     </span>
                     <span style={{ visibility: hover() ? "visible" : "hidden" }}>
                         <IconButton style={{ padding: 0 }} onClick={(e) => handleDelete(e)}>
@@ -101,7 +101,10 @@ export const Projects: Component = () => {
 };
 
 export const Content: Component = () => {
+    let video!: HTMLVideoElement;
+    let canvas!: HTMLCanvasElement;
     const state = useUnit(store);
+
     const [videoData, setVideoData] = createSignal<VideoData>();
     const [videoInfo, setVideoInfo] = createSignal<VideoInfo>();
 
@@ -119,7 +122,23 @@ export const Content: Component = () => {
     });
 
     createEffect(() => {
-        // TODO
+        if (!videoData()) return;
+        if (!video) return;
+        video.src = arrayToUrl(videoData().content);
+        video.addEventListener(
+            "loadeddata",
+            () => {
+                video.addEventListener(
+                    "seeked",
+                    () => {
+                        canvas.getContext("2d").drawImage(video, 0, 0);
+                    },
+                    { once: true },
+                );
+                video.currentTime = 0;
+            },
+            { once: true },
+        );
     });
 
     return (
@@ -142,10 +161,12 @@ export const Content: Component = () => {
                 <Show when={videoInfo()} fallback={<>Loading...</>}>
                     <div>
                         <canvas
+                            ref={canvas}
                             style={{ width: "calc(100% - 40px)", border: "1px solid gray", margin: "20px" }}
                             width={videoInfo().resolution[0]}
                             height={videoInfo().resolution[1]}
                         />
+                        <video ref={video} style={{ display: "none" }} />
                     </div>
                 </Show>
             </div>
