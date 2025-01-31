@@ -72,7 +72,6 @@ export const ProjectCard: Component<{
                     <span
                         style={{
                             "font-weight": state().project === info().uuid ? "bold" : null,
-                            "min-height": "20px",
                         }}>
                         {info().name || "<no name>"}
                     </span>
@@ -105,6 +104,7 @@ export const Content: Component = () => {
     let canvas!: HTMLCanvasElement;
     const state = useUnit(store);
 
+    const [videoLoaded, setVideoLoaded] = createSignal(false);
     const [videoData, setVideoData] = createSignal<VideoData>();
     const [videoInfo, setVideoInfo] = createSignal<VideoInfo>();
 
@@ -118,12 +118,12 @@ export const Content: Component = () => {
         videoRepo.getVideo(project().hash).then(([data, info]) => {
             setVideoData(data);
             setVideoInfo(info);
+            setVideoLoaded(true);
         });
     });
 
     createEffect(() => {
-        if (!videoData()) return;
-        if (!video) return;
+        if (!videoLoaded()) return;
         video.src = arrayToUrl(videoData().content);
         video.addEventListener(
             "loadeddata",
@@ -158,7 +158,7 @@ export const Content: Component = () => {
                         />
                     </span>
                 </div>
-                <Show when={videoInfo()} fallback={<>Loading...</>}>
+                <Show when={videoLoaded()} fallback={<>Loading...</>}>
                     <div>
                         <canvas
                             ref={canvas}
