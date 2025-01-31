@@ -4,6 +4,7 @@ import { Divider, Drawer, Button } from "@suid/material";
 import { importVideo, store, loadProjectList } from "./repo/store";
 import { ProjectData } from "./models/models";
 import AddIcon from "@suid/icons-material/Add";
+import { arrayToUrl } from "./utils/array-to-url";
 
 export const UploadVideo: Component = () => {
   let fileInput!: HTMLInputElement;
@@ -30,11 +31,6 @@ export const UploadVideo: Component = () => {
   );
 };
 
-const abToUrl = (data: ArrayBuffer) => {
-  const blob = new Blob([data]);
-  return URL.createObjectURL(blob);
-};
-
 export const ProjectCard: Component<{ info: ProjectData }> = ({ info }) => {
   return (
     <div
@@ -44,7 +40,7 @@ export const ProjectCard: Component<{ info: ProjectData }> = ({ info }) => {
       }}
     >
       <Divider style={{ "margin-bottom": "5px" }} />
-      <img src={abToUrl(info.frame)} style={{ width: "200px" }} />
+      <img src={arrayToUrl(info.frame)} style={{ width: "200px" }} />
       <span>{info.name}</span>
     </div>
   );
