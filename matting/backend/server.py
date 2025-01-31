@@ -10,6 +10,7 @@ import numpy as np
 from zipfile import ZipFile
 import logging
 from logging import Logger
+import aiohttp_cors
 
 TMP_PATH = "/tmp/matting"
 RESOLUTION = (768, 432)
@@ -66,15 +67,20 @@ class MattingResponse:
     def fail(cls, message, data={}):
         return cls.response("fail", 500, message, data)
 
+    @classmethod
+    def not_found(cls, message, data={}):
+        return cls.response("not found", 404, message, data)
+
 
 @routes.get("/ready")
-async def hello():
-    logger.info("READY request")
-    return web.Response(text="yes")
+async def hello(request: web.Request):
+    logger.info("Ready request")
+    return MattingResponse.success("ready")
 
 
 @routes.post("/matting")
 async def matting(request: web.Request):
+    logger.info("Matting request")
     request_id = str(uuid())
     post = await request.post()
     points = json.loads(post.get("points"))
@@ -111,8 +117,24 @@ async def matting(request: web.Request):
     return web.FileResponse(zip_path, status=200)
 
 
+@routes.get("/frame/{hash}")
+async def first_frame(request: web.Request):
+    logger.info("Frame request")
+    hash = request.match_info["hash"]
+    try:
+        path: Path = Path(TMP_PATH) / hash / "frames" / "00000.jpg"
+        if not path.is_file():
+            return MattingResponse.not_found(f"video {hash} not found")
+
+        return web.FileResponse(path)
+
+    except Exception:
+        return MattingResponse.fail("Unexpected error")
+
+
 @routes.post("/upload")
 async def upload(request: web.Request):
+    logger.info("Upload request")
     try:
         reader = await request.multipart()
 
@@ -166,6 +188,7 @@ async def upload(request: web.Request):
             "frames": count,
             "resolution": resolution,
             "fps": fps,
+            "hash": hash,
         }
 
         with open(str(folder / "params.json"), "w") as params:
@@ -180,6 +203,24 @@ if __name__ == "__main__":
     logger = init_logger()
     logger.info("Starting...")
     parser, predictor = init()
+
     app = web.Application()
     app.add_routes(routes)
+
+    cors = aiohttp_cors.setup(
+        app,
+        defaults={
+            "*": aiohttp_cors.ResourceOptions(
+                allow_credentials=True,
+                expose_headers="*",
+                allow_headers="*",
+                allow_methods="*",
+            )
+        },
+    )
+
+    for route in list(app.router.routes()):
+        logger.debug(f"Adding CORS route {route}")
+        cors.add(route)
+
     web.run_app(app, port=PORT)
