@@ -69,12 +69,8 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
         setPlaying(!playing);
     };
 
-    const step = (numFrames: number) => {
-        if (ui().playing) {
-            video.pause();
-        }
-
-        const newFrame = clamp(frame() + numFrames, 0, videoInfo().frames - 1);
+    const gotoFrame = (f: number) => {
+        const newFrame = clamp(f, 0, videoInfo().frames - 1);
         if (newFrame === frame()) return;
 
         video.currentTime = newFrame / fps();
@@ -87,9 +83,17 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
         );
     };
 
+    const step = (numFrames: number) => {
+        if (ui().playing) {
+            video.pause();
+        }
+
+        gotoFrame(frame() + numFrames);
+    };
+
     return (
-        <div>
-            <div style={{ display: "flex", "flex-direction": "row" }}>
+        <div style={{ display: "flex", "flex-direction": "row", width: "100%", "align-items": "center" }}>
+            <span style={{ "flex-grow": 0 }}>
                 <span title="Step 1 frame back">
                     <IconButton onClick={() => step(-1)}>
                         <SkipPreviousIcon />
@@ -111,22 +115,47 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                         <AutoAwesomeIcon />
                     </IconButton>
                 </span>
-            </div>
-            <div style={{ display: "flex", "flex-direction": "row" }}>
-                <span></span>
-                <span>
-                    <div>
-                        <FixedWidthText text={"Frame "} width={30} />
-                        <FixedWidthText width={80} text={() => `${frame()}  / `} />
-                        <FixedWidthText width={40} text={() => videoInfo()?.frames - 1} />
-                    </div>
-                    <div>
-                        <FixedWidthText text={"Time "} width={30} />
-                        <FixedWidthText width={80} text={() => `${time().toFixed(2)}  / `} />
-                        <FixedWidthText width={40} text={() => duration().toFixed(2)} />
-                    </div>
+            </span>
+            <span style={{ "flex-grow": 1, display: "flex", "justify-content": "space-around" }}>
+                <span style={{ width: "80%", position: "relative" }}>
+                    <span
+                        style={{
+                            display: "inline-block",
+                            height: "4px",
+                            width: "100%",
+                            border: "1px solid lightblue",
+                            "background-color": "lightblue",
+                            "border-radius": "3px",
+                            "vertical-align": "middle",
+                        }}
+                    />
+                    <span
+                        style={{
+                            position: "absolute",
+                            border: "1px solid gray",
+                            background: "lightblue",
+                            "border-radius": "10px",
+                            display: "inline-block",
+                            height: "16px",
+                            width: "16px",
+                            top: "2px",
+                            left: `${Math.round((100 * frame()) / (videoInfo()?.frames - 1))}%`,
+                        }}
+                    />
                 </span>
-            </div>
+            </span>
+            <span style={{ "flex-grow": 0 }}>
+                <div>
+                    <FixedWidthText text={"Frame "} width={30} />
+                    <FixedWidthText width={80} text={() => `${frame()}  / `} />
+                    <FixedWidthText width={40} text={() => videoInfo()?.frames - 1} />
+                </div>
+                <div>
+                    <FixedWidthText text={"Time "} width={30} />
+                    <FixedWidthText width={80} text={() => `${time().toFixed(2)}  / `} />
+                    <FixedWidthText width={40} text={() => duration().toFixed(2)} />
+                </div>
+            </span>
         </div>
     );
 };
