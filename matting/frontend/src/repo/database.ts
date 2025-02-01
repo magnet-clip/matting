@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { VideoInfo as VideoInfo, ProjectData as ProjectData, VideoData } from "../models/models";
+import { VideoInfo, ProjectData, VideoData, PointData } from "../models/models";
 
 const LAST_DB_VERSION = 2;
 const VIDEO_INFO_TABLE = "video-info"; // hash -> arraybuffer
@@ -64,8 +64,41 @@ class ProjectRepo {
         }
     }
 
-    public async deleteProject(uuid: string) {
-        await db.delete(PROJECTS_TABLE, uuid);
+    public async deleteProject(uuid: string): Promise<[string, boolean]> {
+        const transaction = db.transaction(PROJECTS_TABLE, "readwrite");
+        const store = transaction.objectStore(PROJECTS_TABLE);
+        const info: ProjectData = await store.get(uuid);
+        const hash = info.hash;
+        await store.delete(uuid);
+        const records: ProjectData[] = await store.getAll();
+        transaction.commit();
+        return [hash, !records.some((r) => r.hash === hash)];
+    }
+
+    public async addPoint(pid: string, data: PointData) {
+        const transaction = db.transaction(PROJECTS_TABLE, "readwrite");
+        const store = transaction.objectStore(PROJECTS_TABLE);
+
+        const project: ProjectData = await store.get(pid);
+        if (!project.points) project.points = [];
+        project.points.push(data);
+        await store.put(project);
+
+        transaction.commit();
+    }
+
+    public async deletePoint(uuid: string, point: string) {
+        const transaction = db.transaction(PROJECTS_TABLE, "readwrite");
+        const store = transaction.objectStore(PROJECTS_TABLE);
+
+        const project: ProjectData = await store.get(uuid);
+        await store.put({ ...project, points: project.points.filter((p) => p.uuid !== point) });
+
+        transaction.commit();
+    }
+
+    public async getProject(uuid: string): Promise<ProjectData> {
+        return await db.get(PROJECTS_TABLE, uuid);
     }
 }
 
@@ -90,6 +123,11 @@ class VideoRepo {
 
     public async getAllVideosInfo(): Promise<VideoInfo[]> {
         return await db.getAll(VIDEO_INFO_TABLE);
+    }
+
+    public async deleteVideo(hash: string) {
+        await db.delete(VIDEO_DATA_TABLE, hash);
+        await db.delete(VIDEO_INFO_TABLE, hash);
     }
 }
 

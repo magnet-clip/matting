@@ -1,5 +1,5 @@
 import { createEffect, createEvent, createStore } from "effector";
-import { VideoInfo, ProjectData } from "../models/models";
+import { VideoInfo, ProjectData, PointData } from "../models/models";
 import { hashVideo } from "../utils/hash-video";
 import { readFile } from "../utils/read-file";
 import { videoApi } from "./api";
@@ -12,21 +12,39 @@ export const loadProjectList = createEffect(async (): Promise<[ProjectData[], Vi
     return [projects, videos];
 });
 
+const reloadProject = createEffect(async (uuid: string): Promise<[ProjectData, string]> => {
+    const project = await projectRepo.getProject(uuid);
+    return [project, uuid];
+});
+
 export const updateProjectAccess = createEffect(async (uuid: string) => {
     const accessed = Date.now();
     await projectRepo.updateProjectAccess(uuid, accessed);
-    return { uuid, accessed };
+    await reloadProject(uuid);
 });
 
 export const setProjectName = createEffect(async ({ uuid, name }: { uuid: string; name: string }) => {
     await projectRepo.updateProjectName(uuid, name);
-    return [uuid, name];
+    await reloadProject(uuid);
 });
 
 export const deleteProject = createEffect(async (uuid: string) => {
-    await projectRepo.deleteProject(uuid);
-    // TODO delete unused videos
-    return uuid;
+    const [hash, unused] = await projectRepo.deleteProject(uuid);
+    if (unused) {
+        console.warn(`No more projects with video ${hash}`);
+        await videoRepo.deleteVideo(hash);
+    }
+    await reloadProject(uuid);
+});
+
+export const addMattingPoint = createEffect(async ({ data, uuid }: { data: PointData; uuid: string }) => {
+    await projectRepo.addPoint(uuid, data);
+    await reloadProject(uuid);
+});
+
+export const deleteMattingPoint = createEffect(async ({ uuid, point }: { uuid: string; point: string }) => {
+    await projectRepo.deletePoint(uuid, point);
+    await reloadProject(uuid);
 });
 
 export const importVideo = createEffect(async (file: File): Promise<[VideoInfo, ProjectData]> => {
@@ -58,6 +76,7 @@ export const importVideo = createEffect(async (file: File): Promise<[VideoInfo, 
 
 type UiState = {
     playing: boolean;
+    currentFrame: number;
 };
 
 type MattingState = {
@@ -68,6 +87,7 @@ type MattingState = {
 
 const initialUiState: UiState = {
     playing: false,
+    currentFrame: 0,
 };
 
 const initialState: MattingState = {
@@ -78,6 +98,7 @@ const initialState: MattingState = {
 
 export const selectProject = createEvent<string>();
 export const setPlaying = createEvent<boolean>();
+export const setCurrentFrame = createEvent<number>();
 
 export const projectStore = createStore<MattingState>(initialState)
     .on(loadProjectList.doneData, (state, [projects, videos]) => ({ ...state, projects, videos }))
@@ -98,23 +119,20 @@ export const projectStore = createStore<MattingState>(initialState)
         }
     })
     .on(selectProject, (state, project) => ({ ...state, project }))
-    .on(setProjectName, (state, { uuid, name }) => ({
-        ...state,
-        projects: state.projects.map((p) => (p.uuid === uuid ? { ...p, name } : p)),
-    }))
-    .on(updateProjectAccess.doneData, (state, { uuid, accessed }) => ({
-        ...state,
-        projects: state.projects.map((p) => (p.uuid === uuid ? { ...p, accessed } : p)),
-    }))
-    .on(deleteProject.doneData, (state, uuid) => ({
-        ...state,
-        project: state.project === uuid ? null : state.project,
-        projects: state.projects.filter((p) => p.uuid !== uuid),
-    }));
+    .on(reloadProject.doneData, (state, data) => {
+        const [project, uuid] = data;
+        return {
+            ...state,
+            projects: state.projects.map((p) => (p.uuid !== uuid ? p : project)).filter((p) => !!p),
+        };
+    });
+
+projectStore.watch((state) => console.log(state));
 
 export const uiStore = createStore<UiState>(initialUiState)
     .on(selectProject, (state) => ({
         ...state,
-        playing: false,
+        ...initialUiState,
     }))
-    .on(setPlaying, (state, playing) => ({ ...state, playing }));
+    .on(setPlaying, (state, playing) => ({ ...state, playing }))
+    .on(setCurrentFrame, (state, currentFrame) => ({ ...state, currentFrame }));

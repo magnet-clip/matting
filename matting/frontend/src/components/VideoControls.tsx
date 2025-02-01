@@ -1,7 +1,7 @@
 import { IconButton } from "@suid/material";
 import { useUnit } from "effector-solid";
 import { Component, createSignal, createMemo } from "solid-js";
-import { uiStore, projectStore, setPlaying } from "../repo/store";
+import { uiStore, projectStore, setPlaying, setCurrentFrame } from "../repo/store";
 import { FixedWidthText } from "./utils/FixedWidthText";
 import PlayArrowIcon from "@suid/icons-material/PlayArrow";
 import SkipNextIcon from "@suid/icons-material/SkipNext";
@@ -17,8 +17,6 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
 
-    const [frame, setFrame] = createSignal(0);
-    const [time, setTime] = createSignal(0);
     const [drag, setDrag] = createSignal(false);
 
     const videoInfo = createMemo(() => {
@@ -38,10 +36,10 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
 
     const fps = createMemo(() => videoInfo()?.fps);
     const duration = createMemo(() => (videoInfo()?.frames - 1) / fps());
+    const time = () => ui().currentFrame / fps();
 
     const handleFrame = (time: number) => {
-        setFrame(Math.round(time * fps()));
-        setTime(time);
+        setCurrentFrame(Math.round(time * fps()));
 
         cancelFrameCallbacks();
         ctx.drawImage(video, 0, 0);
@@ -73,7 +71,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
 
     const gotoFrame = (f: number) => {
         const newFrame = clamp(f, 0, videoInfo().frames - 1);
-        if (newFrame === frame()) return;
+        if (newFrame === ui().currentFrame) return;
 
         video.currentTime = newFrame / fps();
         video.addEventListener(
@@ -90,7 +88,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
             video.pause();
         }
 
-        gotoFrame(frame() + numFrames);
+        gotoFrame(ui().currentFrame + numFrames);
     };
 
     const handleDrag = (click: boolean, e: MouseEvent) => {
@@ -105,7 +103,8 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
     return (
         <div
             style={{ display: "flex", "flex-direction": "row", width: "100%", "align-items": "center" }}
-            onMouseMove={[handleDrag, false]}>
+            onMouseMove={[handleDrag, false]}
+            onMouseUp={() => setDrag(false)}>
             <span style={{ "flex-grow": 0 }}>
                 <span title="Step 1 frame back">
                     <IconButton onClick={() => step(-1)}>
@@ -145,7 +144,6 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                         }}
                         onClick={[handleDrag, true]}
                         onMouseDown={() => setDrag(true)}
-                        onMouseUp={() => setDrag(false)}
                     />
                     <span
                         style={{
@@ -157,18 +155,17 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                             height: "16px",
                             width: "16px",
                             top: "2px",
-                            left: `${Math.round((100 * frame()) / (videoInfo()?.frames - 1))}%`,
+                            left: `${Math.round((100 * ui().currentFrame) / (videoInfo()?.frames - 1))}%`,
                             cursor: "pointer",
                         }}
                         onMouseDown={() => setDrag(true)}
-                        onMouseUp={() => setDrag(false)}
                     />
                 </span>
             </span>
             <span style={{ "flex-grow": 0 }}>
                 <div>
                     <FixedWidthText text={"Frame "} width={30} />
-                    <FixedWidthText width={80} text={() => `${frame()}  / `} />
+                    <FixedWidthText width={80} text={() => `${ui().currentFrame}  / `} />
                     <FixedWidthText width={40} text={() => videoInfo()?.frames - 1} />
                 </div>
                 <div>

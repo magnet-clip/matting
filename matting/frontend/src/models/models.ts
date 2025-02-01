@@ -10,9 +10,12 @@ export type VideoInfo = {
     hash: string;
 };
 
+export type PointData = { uuid: string; frame: number; x: number; y: number };
+
 export type ProjectSettings = {
     start: number;
     finish: number;
+    points: PointData[];
     mattings: Record<number, ArrayBuffer>;
 };
 
