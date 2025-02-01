@@ -13,11 +13,13 @@ import PauseIcon from "@suid/icons-material/Pause";
 const clamp = (x: number, a: number, b: number) => (x < a ? a : x > b ? b : x);
 
 export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCanvasElement }> = ({ video, canvas }) => {
+    let slider!: HTMLSpanElement;
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
 
     const [frame, setFrame] = createSignal(0);
     const [time, setTime] = createSignal(0);
+    const [drag, setDrag] = createSignal(false);
 
     const videoInfo = createMemo(() => {
         const id = projects().project;
@@ -91,8 +93,19 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
         gotoFrame(frame() + numFrames);
     };
 
+    const handleDrag = (click: boolean, e: MouseEvent) => {
+        if (!click && !drag()) return;
+        const rect = slider.getBoundingClientRect();
+        const clientX = e.pageX;
+        const x = clamp(clientX - rect.left, 0, rect.width);
+        const frame = Math.round(((videoInfo()?.frames - 1) * x) / rect.width);
+        gotoFrame(frame);
+    };
+
     return (
-        <div style={{ display: "flex", "flex-direction": "row", width: "100%", "align-items": "center" }}>
+        <div
+            style={{ display: "flex", "flex-direction": "row", width: "100%", "align-items": "center" }}
+            onMouseMove={[handleDrag, false]}>
             <span style={{ "flex-grow": 0 }}>
                 <span title="Step 1 frame back">
                     <IconButton onClick={() => step(-1)}>
@@ -119,6 +132,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
             <span style={{ "flex-grow": 1, display: "flex", "justify-content": "space-around" }}>
                 <span style={{ width: "80%", position: "relative" }}>
                     <span
+                        ref={slider}
                         style={{
                             display: "inline-block",
                             height: "4px",
@@ -127,7 +141,11 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                             "background-color": "lightblue",
                             "border-radius": "3px",
                             "vertical-align": "middle",
+                            cursor: "pointer",
                         }}
+                        onClick={[handleDrag, true]}
+                        onMouseDown={() => setDrag(true)}
+                        onMouseUp={() => setDrag(false)}
                     />
                     <span
                         style={{
@@ -140,7 +158,10 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                             width: "16px",
                             top: "2px",
                             left: `${Math.round((100 * frame()) / (videoInfo()?.frames - 1))}%`,
+                            cursor: "pointer",
                         }}
+                        onMouseDown={() => setDrag(true)}
+                        onMouseUp={() => setDrag(false)}
                     />
                 </span>
             </span>
