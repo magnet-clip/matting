@@ -28,7 +28,7 @@ const db = await openDB("matting", LAST_DB_VERSION, {
 });
 
 class ProjectRepo {
-    public async projects(): Promise<ProjectData[]> {
+    public async getAllPojects(): Promise<ProjectData[]> {
         return await db.getAll(PROJECTS_TABLE);
     }
 
@@ -86,6 +86,10 @@ class VideoRepo {
 
     public async getVideo(hash: string): Promise<[VideoData, VideoInfo]> {
         return Promise.all([db.get(VIDEO_DATA_TABLE, hash), db.get(VIDEO_INFO_TABLE, hash)]);
+    }
+
+    public async getAllVideosInfo(): Promise<VideoInfo[]> {
+        return await db.getAll(VIDEO_INFO_TABLE);
     }
 }
 
