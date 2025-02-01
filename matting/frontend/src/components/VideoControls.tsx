@@ -10,6 +10,8 @@ import SkipPreviousIcon from "@suid/icons-material/SkipPrevious";
 import AutoAwesomeIcon from "@suid/icons-material/AutoAwesome";
 import PauseIcon from "@suid/icons-material/Pause";
 
+const clamp = (x: number, a: number, b: number) => (x < a ? a : x > b ? b : x);
+
 export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCanvasElement }> = ({ video, canvas }) => {
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
@@ -35,12 +37,16 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
     const fps = createMemo(() => videoInfo()?.fps);
     const duration = createMemo(() => (videoInfo()?.frames - 1) / fps());
 
-    const setupFrameCallback = (time: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
-        setFrame(Math.round(meta.mediaTime * fps()));
-        setTime(meta.mediaTime);
+    const handleFrame = (time: number) => {
+        setFrame(Math.round(time * fps()));
+        setTime(time);
 
         cancelFrameCallbacks();
         ctx.drawImage(video, 0, 0);
+    };
+
+    const setupFrameCallback = (time: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
+        handleFrame(meta.mediaTime);
         callbacks.push(video.requestVideoFrameCallback(setupFrameCallback));
     };
 
@@ -62,11 +68,30 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
         }
         setPlaying(!playing);
     };
+
+    const step = (numFrames: number) => {
+        if (ui().playing) {
+            video.pause();
+        }
+
+        const newFrame = clamp(frame() + numFrames, 0, videoInfo().frames - 1);
+        if (newFrame === frame()) return;
+
+        video.currentTime = newFrame / fps();
+        video.addEventListener(
+            "seeked",
+            () => {
+                handleFrame(video.currentTime);
+            },
+            { once: true },
+        );
+    };
+
     return (
         <div>
             <div style={{ display: "flex", "flex-direction": "row" }}>
                 <span title="Step 1 frame back">
-                    <IconButton>
+                    <IconButton onClick={() => step(-1)}>
                         <SkipPreviousIcon />
                     </IconButton>
                 </span>
@@ -74,7 +99,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                     <IconButton onClick={play}>{ui().playing ? <PauseIcon /> : <PlayArrowIcon />}</IconButton>
                 </span>
                 <span title="Step 1 frame forth">
-                    <IconButton>
+                    <IconButton onClick={() => step(1)}>
                         <SkipNextIcon />
                     </IconButton>
                 </span>
