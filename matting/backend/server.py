@@ -15,7 +15,7 @@ import aiohttp_cors
 TMP_PATH = "/tmp/matting"
 RESOLUTION = (768, 432)
 PORT = 8080
-MODEL_PATH = "../../model/model.pt"
+MODEL_PATH = "./model/model.pt"
 
 device = "cuda"
 
@@ -220,7 +220,6 @@ if __name__ == "__main__":
     )
 
     for route in list(app.router.routes()):
-        logger.debug(f"Adding CORS route {route}")
         cors.add(route)
 
     web.run_app(app, port=PORT)

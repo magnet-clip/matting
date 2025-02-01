@@ -16,6 +16,11 @@ import { arrayToUrl } from "./utils/array-to-url";
 import { A, useParams } from "@solidjs/router";
 import DeleteIcon from "@suid/icons-material/Delete";
 import { videoRepo } from "./repo/database";
+import PlayArrowIcon from "@suid/icons-material/PlayArrow";
+import SkipNextIcon from "@suid/icons-material/SkipNext";
+import SkipPreviousIcon from "@suid/icons-material/SkipPrevious";
+// import AddCircleOutlineIcon from "@suid/icons-material/AddCircleOutline";
+import AutoAwesomeIcon from "@suid/icons-material/AutoAwesome";
 
 export const UploadVideo: Component = () => {
     let fileInput!: HTMLInputElement;
@@ -99,6 +104,36 @@ export const Projects: Component = () => {
     );
 };
 
+export const VideoControls: Component<{ video: HTMLVideoElement }> = ({ video }) => {
+    return (
+        <span style={{ display: "flex", "flex-direction": "row" }}>
+            <span title="Step 1 frame back">
+                <IconButton>
+                    <SkipPreviousIcon />
+                </IconButton>
+            </span>
+            <span title="Play / pause">
+                <IconButton>
+                    <PlayArrowIcon />
+                </IconButton>
+            </span>
+            <span title="Step 1 frame forth">
+                <IconButton>
+                    <SkipNextIcon />
+                </IconButton>
+            </span>
+            <span title="Matting...">
+                {/* <IconButton>
+                    <AddCircleOutlineIcon />
+                </IconButton> */}
+                <IconButton>
+                    <AutoAwesomeIcon />
+                </IconButton>
+            </span>
+        </span>
+    );
+};
+
 export const Content: Component = () => {
     let video!: HTMLVideoElement;
     let canvas!: HTMLCanvasElement;
@@ -159,14 +194,17 @@ export const Content: Component = () => {
                     </span>
                 </div>
                 <Show when={videoLoaded()} fallback={<>Loading...</>}>
-                    <div>
-                        <canvas
-                            ref={canvas}
-                            style={{ width: "calc(100% - 40px)", border: "1px solid gray", margin: "20px" }}
-                            width={videoInfo().resolution[0]}
-                            height={videoInfo().resolution[1]}
-                        />
-                        <video ref={video} style={{ display: "none" }} />
+                    <div style={{ width: "80%", display: "flex", "flex-direction": "column", margin: "20px" }}>
+                        <div>
+                            <canvas
+                                ref={canvas}
+                                style={{ width: "100%", border: "1px solid gray" }}
+                                width={videoInfo().resolution[0]}
+                                height={videoInfo().resolution[1]}
+                            />
+                            <video ref={video} style={{ display: "none" }} />
+                        </div>
+                        <VideoControls video={video} />
                     </div>
                 </Show>
             </div>

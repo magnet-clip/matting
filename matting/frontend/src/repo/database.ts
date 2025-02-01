@@ -3,7 +3,7 @@ import { VideoInfo as VideoInfo, ProjectData as ProjectData, VideoData } from ".
 
 const LAST_DB_VERSION = 2;
 const VIDEO_INFO_TABLE = "video-info"; // hash -> arraybuffer
-const VIDEO_DATA_TABLE = "video-data"; // hash -> fps, resolution, num of frames
+const VIDEO_DATA_TABLE = "video-data"; // hash -> fps, resolution, num of frames, size
 const PROJECTS_TABLE = "project";
 
 const db = await openDB("matting", LAST_DB_VERSION, {
