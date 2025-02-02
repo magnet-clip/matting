@@ -1,0 +1,23 @@
+.innerdot {
+    position: relative;
+    left: 8px;
+    top: -2px;
+    display: inline-block;
+    width: 2px;
+    height: 2px;
+    border: 1px solid blue;
+    background-color: blue;
+    border-radius: 2px;
+    z-index: 10
+}
+
+.outerdot {
+    position: absolute;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid blue;
+    border-radius: 20px;
+    cursor: pointer;
+    z-index: 10;
+}

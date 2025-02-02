@@ -7,6 +7,7 @@ import { addMattingPoint, deleteMattingPoint, projectStore, setProjectName, uiSt
 import { arrayToUrl } from "../utils/array-to-url";
 import { VideoControls } from "./VideoControls";
 import { v4 as uuid } from "uuid";
+import styles from "./VideoContent.module.css";
 
 export const VideoContent: Component = () => {
     let video!: HTMLVideoElement;
@@ -107,20 +108,14 @@ export const VideoContent: Component = () => {
                         <Index each={points()}>
                             {(p) => (
                                 <span
+                                    class={styles.outerdot}
                                     style={{
-                                        position: "absolute",
                                         left: `${p().x - 10}px`,
                                         top: `${p().y - 10}px`,
-                                        display: "inline-block",
-                                        width: "20px",
-                                        height: "20px",
-                                        border: "2px solid blue",
-                                        "border-radius": "20px",
-                                        cursor: "pointer",
-                                        "z-index": "10",
                                     }}
-                                    onClick={[deletePoint, p().uuid]}
-                                />
+                                    onClick={[deletePoint, p().uuid]}>
+                                    <span class={styles.innerdot} />
+                                </span>
                             )}
                         </Index>
                         <VideoControls video={video} canvas={canvas} />
