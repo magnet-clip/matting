@@ -87,15 +87,14 @@ async def matting(request: web.Request):
     start = int(post.get("start"))
     finish = int(post.get("finish"))
     hash = post.get("hash")
-
-    params_path = Path(TMP_PATH) / hash / "params.json"
-    with open(str(params_path), "r") as params:
-        data = json.load(params)
-        resolution = data["resolution"]
+    logger.info(f" --- hash: {hash}")
+    logger.info(f" --- start: {start}")
+    logger.info(f" --- finish: {finish}")
+    logger.info(f" --- points: {points}")
 
     for p in points:
-        p[0] = p[0] / resolution[0] * RESOLUTION[0]
-        p[1] = p[1] / resolution[1] * RESOLUTION[1]
+        p[0] = p[0] * RESOLUTION[0]
+        p[1] = p[1] * RESOLUTION[1]
 
     frames_path = Path(TMP_PATH) / hash / "frames"
     matting_path = Path(TMP_PATH) / hash / request_id

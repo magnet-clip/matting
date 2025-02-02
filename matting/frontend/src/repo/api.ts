@@ -33,6 +33,19 @@ class VideoApi {
             return null;
         }
     }
+
+    public async matting(fd: FormData) {
+        try {
+            const response = await fetch(`${this.baseUrl}/matting`, {
+                method: "post",
+                body: fd,
+            });
+            return await response.arrayBuffer();
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
 }
 
 export const videoApi = new VideoApi(BASE_URL);

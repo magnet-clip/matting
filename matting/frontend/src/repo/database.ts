@@ -120,6 +120,16 @@ class ProjectRepo {
     public async getProject(uuid: string): Promise<ProjectData> {
         return await db.get(PROJECTS_TABLE, uuid);
     }
+
+    public async setMatting(uuid: string, matting: Record<number, ArrayBuffer>) {
+        const transaction = db.transaction(PROJECTS_TABLE, "readwrite");
+        const store = transaction.objectStore(PROJECTS_TABLE);
+
+        const project: ProjectData = await store.get(uuid);
+        await store.put({ ...project, mattings: { ...project.mattings, ...matting } });
+
+        transaction.commit();
+    }
 }
 
 class VideoRepo {

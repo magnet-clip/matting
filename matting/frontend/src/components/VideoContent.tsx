@@ -30,17 +30,10 @@ export const VideoContent: Component = () => {
 
     const points = createMemo(() => {
         if (!project()) return;
-
-        if (!videoInfo()) return [];
-        const [width, height] = videoInfo().resolution;
-
-        const rect = canvasRect();
-        if (!rect) return [];
+        if (!canvasRect()) return [];
 
         const currentFrame = ui().currentFrame;
-        return project()
-            .points?.filter((p) => p.frame === currentFrame)
-            .map((p) => ({ ...p, x: (p.x * rect.width) / width, y: (p.y * rect.height) / height }));
+        return project().points?.filter((p) => p.frame === currentFrame);
     });
 
     const hash = createMemo(() => project()?.hash);
@@ -90,8 +83,8 @@ export const VideoContent: Component = () => {
             data: {
                 uuid: uuid(),
                 frame: ui().currentFrame,
-                x: Math.round((videoInfo().resolution[0] * e.offsetX) / canvasRect().width),
-                y: Math.round((videoInfo().resolution[1] * e.offsetY) / canvasRect().height),
+                x: e.offsetX / canvasRect().width,
+                y: e.offsetY / canvasRect().height,
             },
         });
     };
@@ -141,8 +134,8 @@ export const VideoContent: Component = () => {
                                     <span
                                         class={styles.outerdot}
                                         style={{
-                                            left: `calc(${Math.round(point().x) - 10}px)`,
-                                            top: `calc(${Math.round(point().y) - 10}px)`,
+                                            left: `calc(${Math.round(point().x * canvasRect().width) - 10}px)`,
+                                            top: `calc(${Math.round(point().y * canvasRect().height) - 10}px)`,
                                         }}
                                         onClick={() => deletePoint(point().uuid)}>
                                         <span class={styles.innerdot} />
@@ -156,7 +149,15 @@ export const VideoContent: Component = () => {
                             onMatting={() => setMattingOpen(true)}
                             hasPoints={() => points().length > 0}
                         />
-                        {mattingOpen() && <MattingDialog handleClose={() => setMattingOpen(false)} />}
+                        {mattingOpen() && (
+                            <MattingDialog
+                                handleClose={() => setMattingOpen(false)}
+                                currentFrame={ui().currentFrame}
+                                hash={project().hash}
+                                points={points().map((p) => [p.x, p.y])}
+                                uuid={project().uuid}
+                            />
+                        )}
                     </div>
                 </Show>
                 <video ref={video} style={{ display: "none" }} />

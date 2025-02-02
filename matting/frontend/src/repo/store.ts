@@ -84,6 +84,13 @@ export const importVideo = createEffect(async (file: File): Promise<[VideoInfo, 
     }
 });
 
+export const setMattings = createEffect(
+    async ({ uuid, mattings }: { uuid: string; mattings: Record<number, ArrayBuffer> }) => {
+        await projectRepo.setMatting(uuid, mattings);
+        await reloadProject(uuid);
+    },
+);
+
 type UiState = {
     playing: boolean;
     currentFrame: number;
