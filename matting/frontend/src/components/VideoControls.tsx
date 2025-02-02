@@ -16,11 +16,18 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
 
-    const videoInfo = createMemo(() => {
+    const project = createMemo(() => {
         const id = projects().project;
-        const hash = projects().projects.find((p) => p.uuid === id).hash;
-        const res = projects().videos.find((v) => v.hash === hash);
-        return res;
+        return projects().projects.find((p) => p.uuid === id);
+    });
+
+    const videoInfo = createMemo(() => {
+        const hash = project().hash;
+        return projects().videos.find((v) => v.hash === hash);
+    });
+
+    const marks = createMemo(() => {
+        return [...new Set(project().points?.map((p) => p.frame))];
     });
 
     const callbacks: number[] = [];
@@ -89,11 +96,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
     };
 
     return (
-        <div
-            style={{ display: "flex", "flex-direction": "row", width: "100%", "align-items": "center" }}
-            // onMouseMove={[handleDrag, false]}
-            // onMouseUp={() => setDrag(false)}
-        >
+        <div style={{ display: "flex", "flex-direction": "row", width: "100%", "align-items": "center" }}>
             <span style={{ "flex-grow": 0 }}>
                 <span title="Step 1 frame back">
                     <IconButton onClick={() => step(-1)}>
@@ -116,7 +119,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                 <DeletePointsButton />
             </span>
             <span style={{ "flex-grow": 1, display: "flex", "justify-content": "space-around" }}>
-                <SeekSlider gotoFrame={gotoFrame} videoInfo={videoInfo} />
+                <SeekSlider gotoFrame={gotoFrame} videoInfo={videoInfo} marks={marks} />
             </span>
             <span style={{ "flex-grow": 0 }}>
                 <div>

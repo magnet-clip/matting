@@ -1,13 +1,14 @@
 import { useUnit } from "effector-solid";
-import { Component, createSignal, onMount, onCleanup } from "solid-js";
+import { Component, createSignal, onMount, onCleanup, Index } from "solid-js";
 import { VideoInfo } from "../models/models";
 import { uiStore } from "../repo/store";
 import { clamp } from "../utils/clamp";
 
-export const SeekSlider: Component<{ gotoFrame: (frame: number) => void; videoInfo: () => VideoInfo }> = ({
-    gotoFrame,
-    videoInfo,
-}) => {
+export const SeekSlider: Component<{
+    gotoFrame: (frame: number) => void;
+    videoInfo: () => VideoInfo;
+    marks: () => number[];
+}> = ({ gotoFrame, videoInfo, marks }) => {
     let slider!: HTMLSpanElement;
 
     const ui = useUnit(uiStore);
@@ -62,11 +63,32 @@ export const SeekSlider: Component<{ gotoFrame: (frame: number) => void; videoIn
                     height: "16px",
                     width: "16px",
                     top: "2px",
-                    left: `${Math.round((100 * ui().currentFrame) / (videoInfo()?.frames - 1))}%`,
+                    left: `calc(${Math.round((100 * ui().currentFrame) / (videoInfo()?.frames - 1))}% - 6px)`,
                     cursor: "pointer",
                 }}
                 onMouseDown={() => setDrag(true)}
             />
+            <Index each={marks()}>
+                {(m) => (
+                    <span
+                        style={{
+                            position: "absolute",
+                            border: "1px solid gray",
+                            background: "lightblue",
+                            "border-radius": "4px",
+                            display: "inline-block",
+                            height: "4px",
+                            width: "4px",
+                            top: "8px",
+                            left: `${Math.round((100 * m()) / (videoInfo()?.frames - 1))}%`,
+                            cursor: "pointer",
+                        }}
+                        onClick={() => {
+                            gotoFrame(m());
+                        }}
+                    />
+                )}
+            </Index>
         </span>
     );
 };
