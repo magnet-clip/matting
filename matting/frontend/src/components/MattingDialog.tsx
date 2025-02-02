@@ -90,19 +90,21 @@ export const MattingDialog: Component<{
                             </span>
                         )}
                         {loading() && (
-                            <span style={{ display: "grid", "grid-column": "span 2", padding: "10px" }}>
-                                <LinearProgress />
-                            </span>
-                        )}
-                        {archive() && (
                             <>
-                                <span>Archive</span>
-                                <Button onClick={downloadArchive}>Download</Button>
+                                <span style={{ display: "inline-block", "grid-column": "span 2", padding: "10px" }} />
+                                <span style={{ display: "grid", "grid-column": "span 2", padding: "10px" }}>
+                                    <LinearProgress />
+                                </span>
                             </>
                         )}
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
+                    {archive() && (
+                        <Button onClick={downloadArchive} color="warning">
+                            Download
+                        </Button>
+                    )}
                     <Button onClick={handleMatting}>Calculate</Button>
                     <Button onClick={handleClose}>Close</Button>
                 </DialogActions>
