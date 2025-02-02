@@ -31,11 +31,11 @@ export const VideoContent: Component = () => {
     const points = createMemo(() => {
         if (!project()) return;
 
-        if (!videoInfo()) return;
+        if (!videoInfo()) return [];
         const [width, height] = videoInfo().resolution;
 
         const rect = canvasRect();
-        if (!rect) return;
+        if (!rect) return [];
 
         const currentFrame = ui().currentFrame;
         return project()
@@ -135,7 +135,6 @@ export const VideoContent: Component = () => {
                             height={videoInfo().resolution[1]}
                             onClick={addPoint}
                         />
-                        {/* TODO points coords are absolute but need to be shown relatively */}
                         <Index each={points()}>
                             {(point) => {
                                 return (
@@ -145,13 +144,18 @@ export const VideoContent: Component = () => {
                                             left: `calc(${Math.round(point().x) - 10}px)`,
                                             top: `calc(${Math.round(point().y) - 10}px)`,
                                         }}
-                                        onClick={[deletePoint, point().uuid]}>
+                                        onClick={() => deletePoint(point().uuid)}>
                                         <span class={styles.innerdot} />
                                     </span>
                                 );
                             }}
                         </Index>
-                        <VideoControls video={video} canvas={canvas()} onMatting={() => setMattingOpen(true)} />
+                        <VideoControls
+                            video={video}
+                            canvas={canvas()}
+                            onMatting={() => setMattingOpen(true)}
+                            hasPoints={() => points().length > 0}
+                        />
                         {mattingOpen() && <MattingDialog handleClose={() => setMattingOpen(false)} />}
                     </div>
                 </Show>

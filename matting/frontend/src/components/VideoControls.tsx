@@ -16,7 +16,8 @@ export const VideoControls: Component<{
     video: HTMLVideoElement;
     canvas: HTMLCanvasElement;
     onMatting: () => void;
-}> = ({ video, canvas, onMatting }) => {
+    hasPoints: () => boolean;
+}> = ({ video, canvas, onMatting, hasPoints }) => {
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
 
@@ -115,8 +116,8 @@ export const VideoControls: Component<{
                         <SkipNextIcon />
                     </IconButton>
                 </span>
-                <span title="Matting...">
-                    <IconButton onClick={onMatting}>
+                <span title={hasPoints() ? "Matting..." : "Add points to perform matting!"}>
+                    <IconButton disabled={!hasPoints()} onClick={onMatting}>
                         <AutoAwesomeIcon />
                     </IconButton>
                 </span>

@@ -2,10 +2,11 @@ import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, B
 import { Component } from "solid-js";
 
 export const MattingDialog: Component<{ handleClose: () => void }> = ({ handleClose }) => {
+    const handleMatting = () => {};
     return (
         <div>
             <Dialog open={true}>
-                <DialogTitle>{"Use Google's location service?"}</DialogTitle>
+                <DialogTitle>Matting</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Let Google help apps determine location. This means sending anonymous location data to Google,
@@ -13,8 +14,8 @@ export const MattingDialog: Component<{ handleClose: () => void }> = ({ handleCl
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose}>Disagree</Button>
-                    <Button onClick={handleClose}>Agree</Button>
+                    <Button onClick={handleMatting}>Calculate</Button>
+                    <Button onClick={handleClose}>Close</Button>
                 </DialogActions>
             </Dialog>
         </div>
