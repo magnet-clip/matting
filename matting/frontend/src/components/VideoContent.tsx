@@ -1,6 +1,6 @@
 import { Input } from "@suid/material";
 import { useUnit } from "effector-solid";
-import { Component, createSignal, createEffect, Show, createMemo, Index } from "solid-js";
+import { Component, createSignal, createEffect, Show, createMemo, Index, onMount } from "solid-js";
 import { VideoData, VideoInfo } from "../models/models";
 import { videoRepo } from "../repo/database";
 import { addMattingPoint, deleteMattingPoint, projectStore, setProjectName, uiStore } from "../repo/store";
@@ -8,10 +8,14 @@ import { arrayToUrl } from "../utils/array-to-url";
 import { VideoControls } from "./VideoControls";
 import { v4 as uuid } from "uuid";
 import styles from "./VideoContent.module.css";
+import { MattingDialog } from "./MattingDialog";
 
 export const VideoContent: Component = () => {
     let video!: HTMLVideoElement;
-    let canvas!: HTMLCanvasElement;
+
+    const [canvas, setCanvas] = createSignal<HTMLCanvasElement>();
+    const [canvasRect, setCanvasRect] = createSignal<DOMRect>();
+
     const state = useUnit(projectStore);
     const ui = useUnit(uiStore);
 
@@ -25,16 +29,24 @@ export const VideoContent: Component = () => {
     });
 
     const points = createMemo(() => {
-        const currentFrame = ui().currentFrame;
         if (!project()) return;
-        return project().points?.filter((p) => p.frame === currentFrame);
+
+        if (!videoInfo()) return;
+        const [width, height] = videoInfo().resolution;
+
+        const rect = canvasRect();
+        if (!rect) return;
+
+        const currentFrame = ui().currentFrame;
+        return project()
+            .points?.filter((p) => p.frame === currentFrame)
+            .map((p) => ({ ...p, x: (p.x * rect.width) / width, y: (p.y * rect.height) / height }));
     });
 
     const hash = createMemo(() => project()?.hash);
 
     createEffect(() => {
         if (!hash()) return;
-        console.log("Reloading video");
         videoRepo.getVideo(hash()).then(([data, info]) => {
             setVideoData(data);
             setVideoInfo(info);
@@ -51,7 +63,7 @@ export const VideoContent: Component = () => {
                 video.addEventListener(
                     "seeked",
                     () => {
-                        canvas.getContext("2d").drawImage(video, 0, 0);
+                        canvas().getContext("2d").drawImage(video, 0, 0);
                     },
                     { once: true },
                 );
@@ -61,16 +73,34 @@ export const VideoContent: Component = () => {
         );
     });
 
+    const observer = createMemo(
+        () =>
+            new ResizeObserver((entries) => {
+                setCanvasRect(entries[0].contentRect);
+            }),
+    );
+
+    createEffect(() => {
+        if (canvas()) observer().observe(canvas());
+    });
+
     const addPoint = (e: MouseEvent) => {
         addMattingPoint({
             uuid: project().uuid,
-            data: { uuid: uuid(), frame: ui().currentFrame, x: e.offsetX, y: e.offsetY },
+            data: {
+                uuid: uuid(),
+                frame: ui().currentFrame,
+                x: Math.round((videoInfo().resolution[0] * e.offsetX) / canvasRect().width),
+                y: Math.round((videoInfo().resolution[1] * e.offsetY) / canvasRect().height),
+            },
         });
     };
 
     const deletePoint = (uuid: string) => {
         deleteMattingPoint({ uuid: project().uuid, point: uuid });
     };
+
+    const [mattingOpen, setMattingOpen] = createSignal(false);
 
     return (
         <Show when={project()}>
@@ -99,26 +129,30 @@ export const VideoContent: Component = () => {
                             position: "relative",
                         }}>
                         <canvas
-                            ref={canvas}
+                            ref={setCanvas}
                             style={{ width: "100%", border: "1px solid gray" }}
                             width={videoInfo().resolution[0]}
                             height={videoInfo().resolution[1]}
                             onClick={addPoint}
                         />
+                        {/* TODO points coords are absolute but need to be shown relatively */}
                         <Index each={points()}>
-                            {(p) => (
-                                <span
-                                    class={styles.outerdot}
-                                    style={{
-                                        left: `${p().x - 10}px`,
-                                        top: `${p().y - 10}px`,
-                                    }}
-                                    onClick={[deletePoint, p().uuid]}>
-                                    <span class={styles.innerdot} />
-                                </span>
-                            )}
+                            {(point) => {
+                                return (
+                                    <span
+                                        class={styles.outerdot}
+                                        style={{
+                                            left: `calc(${Math.round(point().x) - 10}px)`,
+                                            top: `calc(${Math.round(point().y) - 10}px)`,
+                                        }}
+                                        onClick={[deletePoint, point().uuid]}>
+                                        <span class={styles.innerdot} />
+                                    </span>
+                                );
+                            }}
                         </Index>
-                        <VideoControls video={video} canvas={canvas} />
+                        <VideoControls video={video} canvas={canvas()} onMatting={() => setMattingOpen(true)} />
+                        {mattingOpen() && <MattingDialog handleClose={() => setMattingOpen(false)} />}
                     </div>
                 </Show>
                 <video ref={video} style={{ display: "none" }} />

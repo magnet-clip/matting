@@ -12,7 +12,11 @@ import { clamp } from "../utils/clamp";
 import { SeekSlider } from "./SeekSlider";
 import { DeletePointsButton } from "./DeletePointsButton";
 
-export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCanvasElement }> = ({ video, canvas }) => {
+export const VideoControls: Component<{
+    video: HTMLVideoElement;
+    canvas: HTMLCanvasElement;
+    onMatting: () => void;
+}> = ({ video, canvas, onMatting }) => {
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
 
@@ -112,7 +116,7 @@ export const VideoControls: Component<{ video: HTMLVideoElement; canvas: HTMLCan
                     </IconButton>
                 </span>
                 <span title="Matting...">
-                    <IconButton>
+                    <IconButton onClick={onMatting}>
                         <AutoAwesomeIcon />
                     </IconButton>
                 </span>
