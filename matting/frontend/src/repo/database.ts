@@ -97,6 +97,26 @@ class ProjectRepo {
         transaction.commit();
     }
 
+    public async deleteAllPoints(uuid: string) {
+        const transaction = db.transaction(PROJECTS_TABLE, "readwrite");
+        const store = transaction.objectStore(PROJECTS_TABLE);
+
+        const project: ProjectData = await store.get(uuid);
+        await store.put({ ...project, points: [] });
+
+        transaction.commit();
+    }
+
+    public async deleteFramePoints(uuid: string, frame: number) {
+        const transaction = db.transaction(PROJECTS_TABLE, "readwrite");
+        const store = transaction.objectStore(PROJECTS_TABLE);
+
+        const project: ProjectData = await store.get(uuid);
+        await store.put({ ...project, points: project.points.filter((p) => p.frame !== frame) });
+
+        transaction.commit();
+    }
+
     public async getProject(uuid: string): Promise<ProjectData> {
         return await db.get(PROJECTS_TABLE, uuid);
     }

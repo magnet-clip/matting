@@ -29,9 +29,12 @@ export const VideoContent: Component = () => {
         return project().points?.filter((p) => p.frame === currentFrame);
     });
 
+    const hash = createMemo(() => project()?.hash);
+
     createEffect(() => {
-        if (!project()) return;
-        videoRepo.getVideo(project().hash).then(([data, info]) => {
+        if (!hash()) return;
+        console.log("Reloading video");
+        videoRepo.getVideo(hash()).then(([data, info]) => {
             setVideoData(data);
             setVideoInfo(info);
             setVideoLoaded(true);

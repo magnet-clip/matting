@@ -23,6 +23,16 @@ export const updateProjectAccess = createEffect(async (uuid: string) => {
     await reloadProject(uuid);
 });
 
+export const deleteFramePoints = createEffect(async ({ uuid, frame }: { uuid: string; frame: number }) => {
+    await projectRepo.deleteFramePoints(uuid, frame);
+    await reloadProject(uuid);
+});
+
+export const deleteAllPoints = createEffect(async (uuid: string) => {
+    await projectRepo.deleteAllPoints(uuid);
+    await reloadProject(uuid);
+});
+
 export const setProjectName = createEffect(async ({ uuid, name }: { uuid: string; name: string }) => {
     await projectRepo.updateProjectName(uuid, name);
     await reloadProject(uuid);
