@@ -1,6 +1,6 @@
 import { IconButton } from "@suid/material";
 import { useUnit } from "effector-solid";
-import { Component, createEffect, createMemo, createSignal, on } from "solid-js";
+import { Component, createEffect, createMemo, createSignal } from "solid-js";
 import { uiStore, projectStore, setPlaying, setCurrentFrame } from "../repo/store";
 import { FixedWidthText } from "./utils/FixedWidthText";
 import PlayArrowIcon from "@suid/icons-material/PlayArrow";
@@ -55,8 +55,6 @@ export const VideoControls: Component<{
 
     createEffect(() => {
         const currentFrame = ui().currentFrame;
-
-        cancelFrameCallbacks();
         const [w, h] = videoInfo().resolution;
         ctx.clearRect(0, 0, w, h);
         ctx.globalAlpha = 1.0;
@@ -82,9 +80,9 @@ export const VideoControls: Component<{
         );
     });
 
-    const setupFrameCallback = (time: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
+    const frameCallback = (time: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
         handleFrame(meta.mediaTime);
-        callbacks.push(video.requestVideoFrameCallback(setupFrameCallback));
+        callbacks.push(video.requestVideoFrameCallback(frameCallback));
     };
 
     const play = () => {
@@ -96,8 +94,8 @@ export const VideoControls: Component<{
                 video.cancelVideoFrameCallback(callback);
             }
         } else {
+            callbacks.push(video.requestVideoFrameCallback(frameCallback));
             video.play();
-            callbacks.push(video.requestVideoFrameCallback(setupFrameCallback));
             video.addEventListener("pause", () => {
                 setPlaying(false);
                 cancelFrameCallbacks();
