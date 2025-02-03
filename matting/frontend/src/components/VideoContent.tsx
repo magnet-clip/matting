@@ -3,7 +3,14 @@ import { useUnit } from "effector-solid";
 import { Component, createSignal, createEffect, Show, createMemo, Index, onMount } from "solid-js";
 import { VideoData, VideoInfo } from "../models/models";
 import { videoRepo } from "../repo/database";
-import { addMattingPoint, deleteMattingPoint, projectStore, setProjectName, uiStore } from "../repo/store";
+import {
+    addMattingPoint,
+    deleteMattingPoint,
+    projectStore,
+    setCurrentFrame,
+    setProjectName,
+    uiStore,
+} from "../repo/store";
 import { arrayToUrl } from "../utils/array-to-url";
 import { VideoControls } from "./VideoControls";
 import { v4 as uuid } from "uuid";
@@ -29,7 +36,7 @@ export const VideoContent: Component = () => {
     });
 
     const points = createMemo(() => {
-        if (!project()) return;
+        if (!project()) return [];
         if (!canvasRect()) return [];
 
         const currentFrame = ui().currentFrame;
@@ -53,13 +60,7 @@ export const VideoContent: Component = () => {
         video.addEventListener(
             "loadeddata",
             () => {
-                video.addEventListener(
-                    "seeked",
-                    () => {
-                        canvas().getContext("2d").drawImage(video, 0, 0);
-                    },
-                    { once: true },
-                );
+                video.addEventListener("seeked", () => setCurrentFrame(0), { once: true });
                 video.currentTime = 0;
             },
             { once: true },

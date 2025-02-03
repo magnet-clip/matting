@@ -1,6 +1,6 @@
 import { IconButton } from "@suid/material";
 import { useUnit } from "effector-solid";
-import { Component, createMemo } from "solid-js";
+import { Component, createEffect, createMemo, createSignal, on } from "solid-js";
 import { uiStore, projectStore, setPlaying, setCurrentFrame } from "../repo/store";
 import { FixedWidthText } from "./utils/FixedWidthText";
 import PlayArrowIcon from "@suid/icons-material/PlayArrow";
@@ -20,6 +20,8 @@ export const VideoControls: Component<{
 }> = ({ video, canvas, onMatting, hasPoints }) => {
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
+
+    const [img, setImg] = createSignal<HTMLImageElement>();
 
     const project = createMemo(() => {
         const id = projects().project;
@@ -49,10 +51,36 @@ export const VideoControls: Component<{
 
     const handleFrame = (time: number) => {
         setCurrentFrame(Math.round(time * fps()));
+    };
+
+    createEffect(() => {
+        const currentFrame = ui().currentFrame;
 
         cancelFrameCallbacks();
+        const [w, h] = videoInfo().resolution;
+        ctx.clearRect(0, 0, w, h);
+        ctx.globalAlpha = 1.0;
+        ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(video, 0, 0);
-    };
+
+        const mask = project().mattings?.[currentFrame];
+        if (ui().playing || !mask) return;
+
+        const blob = new Blob([mask]);
+        const url = URL.createObjectURL(blob);
+        const image = img();
+        image.src = url;
+        image.addEventListener(
+            "load",
+            () => {
+                ctx.globalCompositeOperation = "lighter";
+                ctx.globalAlpha = 0.6;
+                ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+            },
+            { once: true },
+        );
+    });
 
     const setupFrameCallback = (time: DOMHighResTimeStamp, meta: VideoFrameCallbackMetadata) => {
         handleFrame(meta.mediaTime);
@@ -138,6 +166,12 @@ export const VideoControls: Component<{
                     <FixedWidthText width={40} text={() => duration().toFixed(2)} />
                 </div>
             </span>
+            <img
+                ref={setImg}
+                style={{
+                    display: "none",
+                }}
+            />
         </div>
     );
 };
