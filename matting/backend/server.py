@@ -15,7 +15,7 @@ import aiohttp_cors
 TMP_PATH = "/tmp/matting"
 RESOLUTION = (768, 432)
 PORT = 8080
-MODEL_PATH = "./model/model.pt"
+MODEL_PATH = "./model/model-2.pt"
 
 device = "cuda"
 
@@ -78,6 +78,10 @@ async def hello(request: web.Request):
     return MattingResponse.success("ready")
 
 
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+
 @routes.post("/matting")
 async def matting(request: web.Request):
     logger.info("Matting request")
@@ -86,11 +90,13 @@ async def matting(request: web.Request):
     points = json.loads(post.get("points"))
     start = int(post.get("start"))
     finish = int(post.get("finish"))
+    zero = post.get("zero") == "true"
     hash = post.get("hash")
     logger.info(f" --- hash: {hash}")
     logger.info(f" --- start: {start}")
     logger.info(f" --- finish: {finish}")
     logger.info(f" --- points: {points}")
+    logger.info(f" --- zero: {zero}")
 
     for p in points:
         p[0] = p[0] * RESOLUTION[0]
@@ -103,6 +109,13 @@ async def matting(request: web.Request):
     for frame_idx, matting, segment in predictor.predict_frames(
         frames_path, points, start=start, finish=finish
     ):
+        if zero:
+            matting[segment < 0.5] = 0
+
+        cv2.imwrite(
+            str(matting_path / f"{frame_idx:05d}.png"),
+            ((segment > 0.5) * 255).astype(np.uint8),
+        )
         cv2.imwrite(
             str(matting_path / f"{frame_idx:05d}.jpg"),
             (matting * 255).astype(np.uint8),

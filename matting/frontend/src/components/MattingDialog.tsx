@@ -13,6 +13,7 @@ import { Component, createSignal } from "solid-js";
 import { videoApi } from "../repo/api";
 import JSZip from "jszip";
 import { setMattings } from "../repo/store";
+import { Checkbox } from "@suid/material";
 
 export const MattingDialog: Component<{
     handleClose: () => void;
@@ -20,12 +21,14 @@ export const MattingDialog: Component<{
     points: [number, number][];
     hash: string;
     uuid: string;
-}> = ({ handleClose, currentFrame, points, hash, uuid }) => {
+    numFrames: number;
+}> = ({ handleClose, currentFrame, points, hash, uuid, numFrames }) => {
     const [start, setStart] = createSignal(currentFrame);
-    const [finish, setFinish] = createSignal(currentFrame + 1);
+    const [finish, setFinish] = createSignal(Math.min(currentFrame + 10, numFrames));
     const [error, setError] = createSignal(null);
     const [loading, setLoading] = createSignal(false);
     const [archive, setArchive] = createSignal(null);
+    const [crop, setCrop] = createSignal(false);
 
     const handleMatting = async () => {
         setError(null);
@@ -34,6 +37,7 @@ export const MattingDialog: Component<{
         fd.append("start", `${start()}`);
         fd.append("finish", `${finish()}`);
         fd.append("hash", hash);
+        fd.append("zero", `${crop()}`);
 
         setLoading(true);
         setArchive(null);
@@ -83,6 +87,9 @@ export const MattingDialog: Component<{
                         <span style={{ "margin-top": "auto" }}>To</span>
                         <span>
                             <Input value={finish()} onChange={(e) => setFinish(+e.target.value)} />
+                        </span>
+                        <span style={{ "grid-column": "span 2", padding: "10px" }}>
+                            <Checkbox checked={crop()} onChange={(e, c) => setCrop(c)} /> Crop to segmentation
                         </span>
                         {error() && (
                             <span style={{ display: "grid", "grid-column": "span 2", padding: "10px" }}>

@@ -369,6 +369,8 @@ class MattingUNetTrainerDistr:
         self.last_epoch = 0
         self.train_losses = []
         self.test_losses = []
+        self.train_metrics = []
+        self.test_metrics = []
         self.save_every = save_every
         self.device = device
 
@@ -390,12 +392,16 @@ class MattingUNetTrainerDistr:
                 last_checkpoint = self.checkpoints / load
 
             print(f"Loading {str(last_checkpoint)}")
-            self.model = torch.load(open(str(last_checkpoint / "model.pt"), "rb"))
+            self.model = torch.load(
+                open(str(last_checkpoint / "model.pt"), "rb"), weights_only=False
+            )
             params = pickle.load(open(str(last_checkpoint / "params.pkl"), "rb"))
             self.set_lr(params["lr"])
             self.last_epoch = params["last_epoch"] + 1
             self.test_losses = params["test_losses"]
             self.train_losses = params["train_losses"]
+            self.test_metrics = params.get("test_metrics", [])
+            self.train_metrics = params.get("train_metrics", [])
         else:
             self.model = model
 
@@ -431,9 +437,25 @@ class MattingUNetTrainerDistr:
                     "last_epoch": self.last_epoch,
                     "train_losses": self.train_losses,
                     "test_losses": self.test_losses,
+                    "train_metrics": self.train_metrics,
+                    "test_metrics": self.test_metrics,
                 },
                 fh,
             )
+
+    def BatchSAD(self, pred, target, mask):
+        B = target.size(0)
+        error_map = (pred - target).abs()
+        batch_loss = (error_map * mask).view(B, -1).sum(dim=-1)
+        batch_loss = batch_loss / 1000.0
+        return batch_loss.data.sum().cpu().numpy()
+
+    def BatchMAD(self, pred, target, mask):
+        B = target.size(0)
+        error_map = (pred - target).abs()
+        batch_loss = (error_map * mask).view(B, -1).sum(dim=-1)
+        batch_loss = batch_loss / (mask.view(B, -1).sum(dim=-1) + 1.0)
+        return batch_loss.data.sum().cpu().numpy()
 
     def loss(self, truth, prediction, matt_area):
         return self.loss_fn(
@@ -463,12 +485,14 @@ class MattingUNetTrainerDistr:
                 self.train_files, self.max_files, self.transforms_train
             )
             losses = self.train_losses
+            metrics = self.train_metrics
             self.model.train()
         else:
             loader = self.create_dataloader(
                 self.test_files, self.max_files // 2, self.transforms_test
             )
             losses = self.test_losses
+            metrics = self.test_metrics
             self.model.eval()
 
         total_loss = 0
@@ -486,6 +510,17 @@ class MattingUNetTrainerDistr:
                     self.optimizer.zero_grad()
                     current_loss.backward()
                     self.optimizer.step()
+
+                metrics.append(
+                    {
+                        "sad": self.BatchSAD(
+                            predicted, matting, torch.sigmoid(mask_logits) > 0.5
+                        ),
+                        "mad": self.BatchMAD(
+                            predicted, matting, torch.sigmoid(mask_logits) > 0.5
+                        ),
+                    }
+                )
 
                 # if self.rank == 0 and total_batches % self.save_every == 0:
                 if total_batches % self.save_every == 0:

@@ -157,6 +157,7 @@ export const VideoContent: Component = () => {
                                 hash={project().hash}
                                 points={points().map((p) => [p.x, p.y])}
                                 uuid={project().uuid}
+                                numFrames={videoInfo().frames - 1}
                             />
                         )}
                     </div>
