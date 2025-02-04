@@ -11,6 +11,8 @@ import PauseIcon from "@suid/icons-material/Pause";
 import { clamp } from "../utils/clamp";
 import { SeekSlider } from "./SeekSlider";
 import { DeletePointsButton } from "./DeletePointsButton";
+import VisibilityIcon from "@suid/icons-material/Visibility";
+import VisibilityOffIcon from "@suid/icons-material/VisibilityOff";
 
 export const VideoControls: Component<{
     video: HTMLVideoElement;
@@ -20,6 +22,7 @@ export const VideoControls: Component<{
 }> = ({ video, canvas, onMatting, hasPoints }) => {
     const ui = useUnit(uiStore);
     const projects = useUnit(projectStore);
+    const [showMatting, setShowMatting] = createSignal(true);
 
     const [img, setImg] = createSignal<HTMLImageElement>();
 
@@ -53,18 +56,22 @@ export const VideoControls: Component<{
         setCurrentFrame(Math.round(time * fps()));
     };
 
-    createEffect(() => {
+    const matting = createMemo(() => {
         const currentFrame = ui().currentFrame;
+        return project().mattings?.[currentFrame];
+    });
+
+    createEffect(() => {
         const [w, h] = videoInfo().resolution;
         ctx.clearRect(0, 0, w, h);
         ctx.globalAlpha = 1.0;
         ctx.globalCompositeOperation = "source-over";
         ctx.drawImage(video, 0, 0);
 
-        const mask = project().mattings?.[currentFrame];
-        if (ui().playing || !mask) return;
+        const matt = matting();
+        if (ui().playing || !matting || !showMatting()) return;
 
-        const blob = new Blob([mask]);
+        const blob = new Blob([matt]);
         const url = URL.createObjectURL(blob);
         const image = img();
         image.src = url;
@@ -145,6 +152,11 @@ export const VideoControls: Component<{
                 <span title={hasPoints() ? "Matting..." : "Add points to perform matting!"}>
                     <IconButton disabled={!hasPoints()} onClick={onMatting}>
                         <AutoAwesomeIcon />
+                    </IconButton>
+                </span>
+                <span title={showMatting() ? "Matting..." : "Add points to perform matting!"}>
+                    <IconButton disabled={!matting()} onClick={() => setShowMatting(!showMatting())}>
+                        {showMatting() ? <VisibilityIcon /> : <VisibilityOffIcon />}
                     </IconButton>
                 </span>
                 <DeletePointsButton />

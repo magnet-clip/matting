@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+        - NVIDIA_DRIVER_CAPABILITIES=all
+    deploy:
+        resources:
+            reservations:
+                devices:
+                    - driver: nvidia
+                      count: all
+                      capabilities: [gpu]
+  nginx:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - ./static:/usr/share/nginx/html/static

@@ -69,7 +69,7 @@ export const SeekSlider: Component<{
                 onMouseDown={() => setDrag(true)}
             />
             <Index each={marks()}>
-                {(m) => (
+                {(mark) => (
                     <span
                         style={{
                             position: "absolute",
@@ -80,11 +80,11 @@ export const SeekSlider: Component<{
                             height: "4px",
                             width: "4px",
                             top: "8px",
-                            left: `${Math.round((100 * m()) / (videoInfo()?.frames - 1))}%`,
+                            left: `${Math.round((100 * mark()) / (videoInfo()?.frames - 1))}%`,
                             cursor: "pointer",
                         }}
                         onClick={() => {
-                            gotoFrame(m());
+                            gotoFrame(mark());
                         }}
                     />
                 )}
